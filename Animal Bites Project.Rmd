@@ -6,24 +6,6 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 ```{r}
 library(tidyverse)
 library(RColorBrewer)
@@ -32,37 +14,67 @@ library(janitor)
 library(here)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
 ```{r}
 animal_bites <- readr::read_csv("Health_AnimalBites.csv")%>%clean_names()
 ```
 ```{r}
 animal_bites
 ```
+#Cleaning up the Data
 ```{r}
 animal_bites <- animal_bites%>%
-  naniar::replace_with_na(replace=list(gender_id_desc="UNKNOWN", results_id_desc="UNKNOWN", disposition_id_desc="UNKNOWN"))
+  naniar::replace_with_na(replace=list(gender_id_desc="UNKNOWN", results_id_desc="UNKNOWN", disposition_id_desc="UNKNOWN", vaccination_date="<NA>", head_sent_date="<NA>", release_date="<NA>"))
 animal_bites
-```
-
-```{r}
-animal_bites%>%
-  count(breed_id_desc)%>%
-  arrange(desc(n))
 ```
 
 ```{r}
 animal_bites%>%
   naniar::miss_var_summary()
 ```
+Most of the results from the rabies test are missing as well as when the sample was sent in to the lab. 
+
 ```{r}
-animal_bites%>%
+animal_bites <- animal_bites%>%
   separate(bite_date, into=c("year", "month", "day"), sep = "-")
+animal_bites
 ```
 
+#Questions we wanted to ask
+What are the results of the rabies test? 
 ```{r}
 animal_bites%>%
   count(results_id_desc)
 ```
+What animal is most likely to bite? 
+
+```{r}
+animal_bites%>%
+  count(species_id_desc)%>%
+  arrange(desc(n))
+```
+
+
+What animal has the most positive tests for rabies?
+
+
+What breed of dog is most likely to bite?
+```{r}
+animal_bites%>%
+  count(breed_id_desc)%>%
+  arrange(desc(n))
+```
+
+Where was data collected from? 
+
+
+When was data collected?
+
+
+Vaccination rates/dates? 
+
+
+Where was the place on the body where most people got bit? 
+
+
+Associations with positive rabies results. 
 
