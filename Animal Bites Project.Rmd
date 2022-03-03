@@ -1,0 +1,80 @@
+---
+title: "Project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(tidyverse)
+library(RColorBrewer)
+library(paletteer)
+library(janitor)
+library(here)
+```
+
+```{r}
+animal_bites <- readr::read_csv("Health_AnimalBites.csv")%>%clean_names()
+```
+```{r}
+animal_bites
+```
+#Cleaning up the Data
+```{r}
+animal_bites <- animal_bites%>%
+  naniar::replace_with_na(replace=list(gender_id_desc="UNKNOWN", results_id_desc="UNKNOWN", disposition_id_desc="UNKNOWN", vaccination_date="<NA>", head_sent_date="<NA>", release_date="<NA>"))
+animal_bites
+```
+
+```{r}
+animal_bites%>%
+  naniar::miss_var_summary()
+```
+Most of the results from the rabies test are missing as well as when the sample was sent in to the lab. 
+
+```{r}
+animal_bites <- animal_bites%>%
+  separate(bite_date, into=c("year", "month", "day"), sep = "-")
+animal_bites
+```
+
+#Questions we wanted to ask
+What are the results of the rabies test? 
+```{r}
+animal_bites%>%
+  count(results_id_desc)
+```
+What animal is most likely to bite? 
+
+```{r}
+animal_bites%>%
+  count(species_id_desc)%>%
+  arrange(desc(n))
+```
+
+
+What animal has the most positive tests for rabies?
+
+
+What breed of dog is most likely to bite?
+```{r}
+animal_bites%>%
+  count(breed_id_desc)%>%
+  arrange(desc(n))
+```
+
+Where was data collected from? 
+
+
+When was data collected?
+
+
+Vaccination rates/dates? 
+
+
+Where was the place on the body where most people got bit? 
+
+
+Associations with positive rabies results. 
+
