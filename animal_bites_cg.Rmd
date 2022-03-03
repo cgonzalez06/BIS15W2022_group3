@@ -1,0 +1,102 @@
+---
+title: "final_project"
+author: "Cristina Gonzalez"
+date: "2/15/2022"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(naniar)
+library(shiny)
+library(shinydashboard)
+```
+
+```{r}
+animal_bites <- read_csv("/Users/cristina/Desktop/BIS15W2022_group3/data/Animal_Bites.csv") %>% 
+  clean_names() %>% 
+  separate(bite_date, into = c("year", "month", "date"), sep= "-") 
+#Look up package lubridate
+```
+
+```{r}
+animal_bites %>% 
+  filter(species_id_desc=="DOG") %>% 
+  count(breed_id_desc) %>% 
+  na.omit() %>% 
+  arrange(desc(n))
+```
+```{r}
+animal_bites %>% 
+  filter(species_id_desc=="DOG") %>% 
+  filter(year>=2010 & year<=2022) %>% 
+  ggplot(aes(x=month))+
+  geom_bar()
+```
+```{r}
+animal_bites %>% 
+  filter(gender_id_desc=="MALE" | gender_id_desc=="FEMALE") %>% 
+  filter(breed_id_desc=="PIT BULL" | breed_id_desc=="GERM SHEPHERD" | breed_id_desc=="LABRADOR RETRIV" | breed_id_desc=="BOXER" | breed_id_desc=="CHICHAUHUA" | breed_id_desc=="SHIH TZU") %>% 
+  ggplot(aes(x=gender_id_desc, fill=breed_id_desc))+
+  geom_bar()+
+  facet_wrap(~breed_id_desc)
+```
+```{r}
+animal_bites %>% 
+  count(species_id_desc)
+```
+```{r}
+animal_bites %>% 
+  filter(results_id_desc=="POSITIVE")
+```
+```{r}
+animal_bites %>% 
+  count(vaccination_yrs)
+```
+
+```{r}
+animal_bites %>% 
+  count(color)
+```
+```{r}
+animal_bites %>% 
+  filter(results_id_desc=="POSITIVE") %>% 
+  count(species_id_desc)
+```
+
+
+```{r}
+ui <-dashboardPage(
+  dashboardHeader(title = "Dog Bites"),
+  dashboardSidebar(disable=T),
+  dashboardBody(
+    fluidRow(
+      box(title = "Plot Options", width = 3,
+          selectInput("x", "Select Breed", choices = c("PIT BULL", "GERM SHEPHERD", "LABRADOR RETRIV", "BOXER", "CHICHAUHUA", "SHIH TZU", "BEAGLE", "ROTTWEILER", "AAUST. TERR.", "DACHSHUND"),
+          selected = "PITBULL")),
+      box(title = "Bites per Sex", width = 7,
+      plotOutput("plot", width = "600px", height="500px"))
+    )
+  )
+)
+
+server <-function(input, output, session) {
+  output$plot <- renderPlot({
+    animal_bites %>% 
+      filter(gender_id_desc=="MALE" | gender_id_desc=="FEMALE") %>% 
+      filter(breed_id_desc==input$x) %>% 
+    ggplot(aes_string(x="gender_id_desc", fill="gender_id_desc"))+
+    geom_bar()+
+    theme_classic()+
+    labs(x="Sex",
+         y="Number of Bites Recorded")+
+    theme(axis.text=element_text(size=14, face="bold"),
+        axis.title=element_text(size=14,face="bold"))
+  })
+  session$onSessionEnded(stopApp)
+}
+
+shinyApp(ui, server)
+```
+
