@@ -1,71 +1,115 @@
 ---
-title: "final_project"
+title: "animal_bites_cg"
 author: "Cristina Gonzalez"
-date: "2/15/2022"
+date: "3/6/2022"
 output: html_document
 ---
 
+Load libraries:
 ```{r}
+library(zipcodeR)
 library(tidyverse)
 library(janitor)
 library(naniar)
 library(shiny)
 library(shinydashboard)
+library(maps)
+library(viridis)
+library(ggthemes)
+library(albersusa)
 ```
 
+Load data:
 ```{r}
 animal_bites <- read_csv("/Users/cristina/Desktop/BIS15W2022_group3/data/Animal_Bites.csv") %>% 
   clean_names() %>% 
-  separate(bite_date, into = c("year", "month", "date"), sep= "-") 
-#Look up package lubridate
+  separate(bite_date, into = c("year", "month", "date"), sep= "-") %>% 
+  mutate(zipcode=as.character(victim_zip)) %>% 
+  select(-victim_zip)
 ```
 
+View data structure:
+```{r}
+glimpse(animal_bites)
+```
+
+```{r}
+summary(animal_bites)
+```
+
+Mutate dog breed names
+```{r}
+animal_bites <- animal_bites %>% 
+  mutate(breed_id_desc = replace(breed_id_desc, breed_id_desc == "CHICHAUHUA", "CHIHUAHUA")) %>% 
+  mutate(breed_id_desc = replace(breed_id_desc, breed_id_desc == "LABRADOR RETRIV", "LAB RETRIEVER")) %>% 
+  mutate(breed_id_desc = replace(breed_id_desc, breed_id_desc == "AAUST. TERR.", "AUSTRALIAN TERRIER")) %>% 
+  mutate(breed_id_desc = replace(breed_id_desc, breed_id_desc == "GOLD RETRIEVER", "GOLDEN RETRIEVER")) %>% 
+  mutate(breed_id_desc = replace(breed_id_desc, breed_id_desc == "MASTIF", "MASTIFF")) %>% 
+  mutate(breed_id_desc = replace(breed_id_desc, breed_id_desc == "DOBERMAN", "DOBERMANN"))
+```
+
+#Exporing gender data
+```{r}
+animal_bites %>% 
+  filter(gender_id_desc=="MALE" | gender_id_desc=="FEMALE") %>% 
+  group_by(species_id_desc, gender_id_desc) %>% 
+  summarize(n=n())
+```
+
+Comparing gender for cats and dogs:
+```{r}
+jpeg("plots/gender_plot.jpg")
+
+animal_bites %>% 
+  filter(gender_id_desc=="MALE" | gender_id_desc=="FEMALE") %>% 
+  filter(species_id_desc=="DOG" | species_id_desc=="CAT") %>% 
+  ggplot(aes(x=gender_id_desc, fill=gender_id_desc))+
+  geom_bar()+
+  facet_wrap(~species_id_desc)+
+  theme_bw()+
+  labs(title = "Number of Bites Reported for\n Males vs. Females",
+       x= "Species",
+       y= "Bites Reported",
+       fill= "Sex")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  theme(plot.title = element_text(size=20, face="bold"))+
+  theme(axis.text=element_text(size=14),
+        axis.title=element_text(size=16,face="bold"))
+
+
+dev.off()
+```
+Find top 20 most common dog breeds: 
 ```{r}
 animal_bites %>% 
   filter(species_id_desc=="DOG") %>% 
   count(breed_id_desc) %>% 
-  na.omit() %>% 
-  arrange(desc(n))
+  arrange(desc(n)) %>% 
+  head(21)
 ```
+
+Comparing gender for top 10 most common dog breeds:
 ```{r}
-animal_bites %>% 
-  filter(species_id_desc=="DOG") %>% 
-  filter(year>=2010 & year<=2022) %>% 
-  ggplot(aes(x=month))+
-  geom_bar()
-```
-```{r}
+jpeg("plots/dog_gender_plot.jpg")
 animal_bites %>% 
   filter(gender_id_desc=="MALE" | gender_id_desc=="FEMALE") %>% 
-  filter(breed_id_desc=="PIT BULL" | breed_id_desc=="GERM SHEPHERD" | breed_id_desc=="LABRADOR RETRIV" | breed_id_desc=="BOXER" | breed_id_desc=="CHICHAUHUA" | breed_id_desc=="SHIH TZU") %>% 
+  filter(breed_id_desc=="PIT BULL" | breed_id_desc=="GERM SHEPHERD" | breed_id_desc=="LAB RETRIEVER" | breed_id_desc=="BOXER" | breed_id_desc=="CHIHUAHUA" | breed_id_desc=="BEAGLE") %>% 
   ggplot(aes(x=gender_id_desc, fill=breed_id_desc))+
   geom_bar()+
-  facet_wrap(~breed_id_desc)
-```
-```{r}
-animal_bites %>% 
-  count(species_id_desc)
-```
-```{r}
-animal_bites %>% 
-  filter(results_id_desc=="POSITIVE")
-```
-```{r}
-animal_bites %>% 
-  count(vaccination_yrs)
+  facet_wrap(~breed_id_desc)+
+  theme_bw()+
+  labs(title = "Number of Bites Reported for\n Males vs. Female by Dog Breed",
+       x= "Breed",
+       y= "Bites Reported",
+       fill= "Breed")+
+  theme(plot.title = element_text(hjust = 0.5, size = 20, face="bold"),
+        axis.text=element_text(size=14),
+        axis.title=element_text(size=16,face="bold"),
+        axis.text.x = element_text(angle = 60, hjust=1))
+dev.off()
 ```
 
-```{r}
-animal_bites %>% 
-  count(color)
-```
-```{r}
-animal_bites %>% 
-  filter(results_id_desc=="POSITIVE") %>% 
-  count(species_id_desc)
-```
-
-
+Dog gender comparison app:
 ```{r}
 ui <-dashboardPage(
   dashboardHeader(title = "Dog Bites"),
@@ -73,7 +117,7 @@ ui <-dashboardPage(
   dashboardBody(
     fluidRow(
       box(title = "Plot Options", width = 3,
-          selectInput("x", "Select Breed", choices = c("PIT BULL", "GERM SHEPHERD", "LABRADOR RETRIV", "BOXER", "CHICHAUHUA", "SHIH TZU", "BEAGLE", "ROTTWEILER", "AAUST. TERR.", "DACHSHUND"),
+          selectInput("x", "Select Breed", choices = c("PIT BULL", "GERM SHEPHERD", "LAB RETRIEVER", "BOXER", "CHIHUAHUA", "SHIH TZU", "BEAGLE", "ROTTWEILER", "AUSTRALIAN TERRIER", "DACHSHUND", "ROTTWEILER", "GREAT DANE", "HUSKY", "CANE CORSO", "GOLDEN RETRIEVER", "DACHSHUND", "BORDER COLLIE", "MASTIFF", "YORKSHIRE TERRIER", "DOBERMANN", "BULL DOG", "POODLE"),
           selected = "PITBULL")),
       box(title = "Bites per Sex", width = 7,
       plotOutput("plot", width = "600px", height="500px"))

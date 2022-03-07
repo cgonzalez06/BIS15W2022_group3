@@ -1,0 +1,289 @@
+---
+title: "final_project"
+author: "Cristina Gonzalez"
+date: "2/15/2022"
+output: html_document
+---
+
+```{r}
+library(zipcodeR)
+library(tidyverse)
+library(janitor)
+library(naniar)
+library(shiny)
+library(shinydashboard)
+library(maps)
+library(viridis)
+library(ggthemes)
+library(albersusa)
+```
+
+```{r}
+glimpse(animal_bites)
+```
+
+
+```{r}
+animal_bites <- read_csv("/Users/cristina/Desktop/BIS15W2022_group3/data/Animal_Bites.csv") %>% 
+  clean_names() %>% 
+  separate(bite_date, into = c("year", "month", "date"), sep= "-") %>% 
+  mutate(zipcode=as.character(victim_zip)) %>% 
+  select(-victim_zip)
+#Look up package lubridate
+```
+
+```{r}
+animal_bites %>% 
+  filter(species_id_desc=="DOG") %>% 
+  count(breed_id_desc) %>% 
+  na.omit() %>% 
+  arrange(desc(n))
+```
+```{r}
+animal_bites %>% 
+  filter(species_id_desc=="DOG") %>% 
+  filter(year>=2010 & year<=2022) %>% 
+  ggplot(aes(x=month))+
+  geom_bar()
+```
+```{r}
+#dog bites by gender
+#plot
+dog_gender <- animal_bites %>% 
+  filter(species_id_desc=="DOG") %>% 
+  filter(gender_id_desc=="MALE" | gender_id_desc=="FEMALE") %>% 
+  select(species_id_desc, breed_id_desc, gender_id_desc) %>% 
+  group_by(breed_id_desc, gender_id_desc) %>% 
+  summarize(n=n()) %>% 
+  filter(breed_id_desc=="PIT BULL" | breed_id_desc=="GERM SHEPHERD" |  breed_id_desc=="LABRADOR RETRIV" | breed_id_desc=="BOXER" | breed_id_desc=="CHICHAUHUA" | breed_id_desc=="SHIH TZU") %>% 
+  mutate(breed_id_desc = replace(breed_id_desc, breed_id_desc == "CHICHAUHUA", "CHIHUAHUA"))
+
+dog_gender
+
+```
+
+```{r}
+jpeg("plots/dog_gender_plot.jpg")
+animal_bites %>% 
+  filter(gender_id_desc=="MALE" | gender_id_desc=="FEMALE") %>% 
+  filter(breed_id_desc=="PIT BULL" | breed_id_desc=="GERM SHEPHERD" | breed_id_desc=="LABRADOR RETRIV" | breed_id_desc=="BOXER" | breed_id_desc=="CHICHAUHUA" | breed_id_desc=="SHIH TZU") %>% 
+  mutate(breed_id_desc = replace(breed_id_desc, breed_id_desc == "CHICHAUHUA", "CHIHUAHUA")) %>% 
+  mutate(breed_id_desc = replace(breed_id_desc, breed_id_desc == "GERM SHEPHERD", "GERMAN SHEPHERD")) %>% 
+  mutate(breed_id_desc = replace(breed_id_desc, breed_id_desc == "LABRADOR RETRIV", "LABRADOR RETRIEVER")) %>% 
+  ggplot(aes(x=gender_id_desc, fill=breed_id_desc))+
+  geom_bar()+
+  facet_wrap(~breed_id_desc)+
+  theme_bw()+
+  labs(title = "Number of Bites Reported for\n Males vs. Female by Dog Breed",
+       x= "Breed",
+       y= "Bites Reported",
+       fill= "Breed")+
+  theme(plot.title = element_text(hjust = 0.5, size = 20, face="bold"),
+        axis.text=element_text(size=14),
+        axis.title=element_text(size=16,face="bold"),
+        axis.text.x = element_text(angle = 60, hjust=1))
+dev.off()
+```
+```{r}
+jpeg("plots/gender_plot.jpg")
+
+animal_bites %>% 
+  filter(gender_id_desc=="MALE" | gender_id_desc=="FEMALE") %>% 
+  filter(species_id_desc=="DOG" | species_id_desc=="CAT") %>% 
+  ggplot(aes(x=gender_id_desc, fill=gender_id_desc))+
+  geom_bar()+
+  facet_wrap(~species_id_desc)+
+  theme_bw()+
+  labs(title = "Number of Bites Reported for\n Males vs. Females",
+       x= "Species",
+       y= "Bites Reported",
+       fill= "Sex")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  theme(plot.title = element_text(size=20, face="bold"))+
+  theme(axis.text=element_text(size=14),
+        axis.title=element_text(size=16,face="bold"))
+
+
+dev.off()
+```
+
+
+```{r}
+animal_bites %>% 
+  filter(gender_id_desc=="MALE" | gender_id_desc=="FEMALE") %>% 
+  filter(species_id_desc=="CAT") %>% 
+  count(breed) %>% 
+  arrange(desc(n))
+
+
+animal_bites %>% 
+  filter(gender_id_desc=="MALE" | gender_id_desc=="FEMALE") %>% 
+  filter(species_id_desc=="CAT") %>% 
+  filter(breed=="DSH" | breed=="DLH" | breed=="TABBY") %>% 
+  ggplot(aes(x=gender_id_desc, fill=breed))+
+  geom_bar()+
+  facet_wrap(~breed)
+```
+
+
+
+
+```{r}
+animal_bites %>% 
+  count(species_id_desc)
+```
+```{r}
+animal_bites %>% 
+  filter(results_id_desc=="POSITIVE")
+```
+```{r}
+animal_bites %>% 
+  count(vaccination_yrs)
+```
+
+```{r}
+animal_bites %>% 
+  count(color)
+```
+
+```{r}
+animal_bites %>% 
+  filter(results_id_desc=="POSITIVE") %>% 
+  count(species_id_desc)
+```
+
+
+```{r}
+ui <-dashboardPage(
+  dashboardHeader(title = "Dog Bites"),
+  dashboardSidebar(disable=T),
+  dashboardBody(
+    fluidRow(
+      box(title = "Plot Options", width = 3,
+          selectInput("x", "Select Breed", choices = c("PIT BULL", "GERM SHEPHERD", "LABRADOR RETRIV", "BOXER", "CHICHAUHUA", "SHIH TZU", "BEAGLE", "ROTTWEILER", "AAUST. TERR.", "DACHSHUND"),
+          selected = "PITBULL")),
+      box(title = "Bites per Sex", width = 7,
+      plotOutput("plot", width = "600px", height="500px"))
+    )
+  )
+)
+
+server <-function(input, output, session) {
+  output$plot <- renderPlot({
+    animal_bites %>% 
+      filter(gender_id_desc=="MALE" | gender_id_desc=="FEMALE") %>% 
+      filter(breed_id_desc==input$x) %>% 
+    ggplot(aes_string(x="gender_id_desc", fill="gender_id_desc"))+
+    geom_bar()+
+    theme_classic()+
+    labs(x="Sex",
+         y="Number of Bites Recorded")+
+    theme(axis.text=element_text(size=14, face="bold"),
+        axis.title=element_text(size=14,face="bold"))
+  })
+  session$onSessionEnded(stopApp)
+}
+
+shinyApp(ui, server)
+```
+
+```{r}
+zip_codes <- animal_bites %>% 
+  filter(!is.na(zipcode)) %>% 
+  count(zipcode)
+zip_codes
+```
+
+```{r}
+zip_merged <- left_join(zip_codes, zip_code_db, by = "zipcode") 
+```
+
+```{r}
+zip_merged %>% 
+  select(zipcode, lat, lng, n)
+```
+```{r}
+zip_merged %>% 
+  select(lat, lng) %>% 
+  summary()
+```
+```{r}
+lat <- c(36, 40)
+long <- c(-91, -81)
+bbox <- make_bbox(long, lat, f = 0.05)
+map1 <- get_map(bbox, maptype = "terrain", source = "stamen")
+ggmap(map1)
+```
+```{r}
+ggmap(map1) + 
+  geom_point(data = zip_merged, aes(lng, lat)) +
+  labs(x = "Longitude", y = "Latitude", title = "Animal Bite Locations")
+```
+
+```{r}
+us<-map_data('state')
+
+ggplot(zip_merged,aes(lng,lat)) +
+  geom_polygon(data=us,aes(x=long,y=lat,group=group),color='gray',fill=NA,alpha=1)+
+  geom_point(aes(color = n),size=1.5,alpha=.75) +
+  xlim(-91,-81)+ylim(36,40)+
+  theme(panel.grid = element_blank())
+```
+
+```{r}
+ky_comp <- us_comp %>% 
+  filter(name=="Kentucky")
+```
+```{r}
+ky_cnty_comp <- cnty_comp %>% 
+  filter(state=="Kentucky")
+```
+```{r}
+ggplot() +
+  geom_sf(data = ky_comp, size = 0.125)+
+  geom_sf(data = ky_cnty_comp, size = 0.125)
+```
+```{r}
+ggplot() +
+  geom_sf(data = ky_comp, size = 0.125)+
+  geom_sf(data = ky_cnty_comp, size = 0.125)+
+  geom_point(data = zip_merged, aes(lng, lat))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = ky_comp, size = 0.125)+
+  geom_sf(data = ky_cnty_comp, size = 0.125)+
+  geom_point(data = zip_merged, aes(lng, lat, color=n), size=0.8, alpha=0.75)+
+  xlim(-91,-81)+ylim(36,40)+
+  labs(x = "Distribution of Animal Bites around Louisville")+
+  theme_minimal() +
+  scale_color_viridis(option="A")+
+  theme(axis.text = element_blank()) +
+  theme(axis.title.x = element_text(hjust=0.5, size = 10)) +
+  theme(axis.title.y = element_blank()) +
+  theme(panel.grid = element_blank()) +
+  theme(legend.position = c(0.9, 0.3)) -> uso_map
+uso_map
+```
+
+```{r}
+animal_bites %>%
+  group_by(species_id_desc, gender_id_desc) %>% 
+  count(gender_id_desc) %>% 
+  na.omit() %>% 
+  ggplot(aes(x=species_id_desc, y=gender_id_desc, fill= n)) + 
+  geom_tile() +
+  scale_fill_gradient(low="yellow", high="red")+
+  coord_flip()
+```
+```{r}
+animal_bites %>% 
+  count(species_id_desc)
+```
+```{r}
+animal_bites %>% 
+  count(color) %>% 
+  arrange(desc(n))
+```
+
