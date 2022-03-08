@@ -17,6 +17,7 @@ library(maps)
 library(viridis)
 library(ggthemes)
 library(albersusa)
+library(ggplot2)
 ```
 
 Load data:
@@ -155,6 +156,15 @@ zip_codes
 Merge with zip code database
 ```{r}
 zip_merged <- left_join(zip_codes, zip_code_db, by = "zipcode") 
+```
+
+US map
+```{r}
+us_comp <- usa_sf()
+```
+
+```{r}
+cnty_comp <- counties_sf()
 ```
 
 Map of Kentucky
