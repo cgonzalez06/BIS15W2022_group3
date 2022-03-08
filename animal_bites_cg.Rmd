@@ -66,7 +66,7 @@ animal_bites %>%
   ggplot(aes(x=gender_id_desc, fill=gender_id_desc))+
   geom_bar()+
   facet_wrap(~species_id_desc)+
-  theme_bw()+
+  theme_classic()+
   labs(title = "Number of Bites Reported for\n Males vs. Females",
        x= "Species",
        y= "Bites Reported",
@@ -97,7 +97,7 @@ animal_bites %>%
   ggplot(aes(x=gender_id_desc, fill=breed_id_desc))+
   geom_bar()+
   facet_wrap(~breed_id_desc)+
-  theme_bw()+
+  theme_classic()+
   labs(title = "Number of Bites Reported for\n Males vs. Female by Dog Breed",
        x= "Breed",
        y= "Bites Reported",
@@ -142,5 +142,52 @@ server <-function(input, output, session) {
 }
 
 shinyApp(ui, server)
+```
+
+#Map of Kentucky 
+```{r}
+zip_codes <- animal_bites %>% 
+  filter(!is.na(zipcode)) %>% 
+  count(zipcode)
+zip_codes
+```
+
+Merge with zip code database
+```{r}
+zip_merged <- left_join(zip_codes, zip_code_db, by = "zipcode") 
+```
+
+Map of Kentucky
+```{r}
+ky_comp <- us_comp %>% 
+  filter(name=="Kentucky")
+```
+
+Add county lines
+```{r}
+ky_cnty_comp <- cnty_comp %>% 
+  filter(state=="Kentucky")
+```
+
+Final map
+```{r}
+jpeg("plots/kentucky_map.jpg")
+
+ggplot() +
+  geom_sf(data = ky_comp, size = 0.125)+
+  geom_sf(data = ky_cnty_comp, size = 0.125)+
+  geom_point(data = zip_merged, aes(lng, lat, color=n), size=0.8, alpha=0.75)+
+  xlim(-91,-81)+ylim(36,40)+
+  labs(x = "Distribution of Animal Bites around Louisville")+
+  theme_minimal() +
+  scale_color_viridis(option="A")+
+  theme(axis.text = element_blank()) +
+  theme(axis.title.x = element_text(hjust=0.5, size = 14)) +
+  theme(axis.title.y = element_blank()) +
+  theme(panel.grid = element_blank()) +
+  theme(legend.position = c(0.9, 0.3)) -> uso_map
+uso_map
+
+dev.off()
 ```
 

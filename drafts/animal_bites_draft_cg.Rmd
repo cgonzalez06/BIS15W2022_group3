@@ -202,47 +202,31 @@ zip_merged <- left_join(zip_codes, zip_code_db, by = "zipcode")
 zip_merged %>% 
   select(zipcode, lat, lng, n)
 ```
+
 ```{r}
 zip_merged %>% 
   select(lat, lng) %>% 
   summary()
 ```
-```{r}
-lat <- c(36, 40)
-long <- c(-91, -81)
-bbox <- make_bbox(long, lat, f = 0.05)
-map1 <- get_map(bbox, maptype = "terrain", source = "stamen")
-ggmap(map1)
-```
-```{r}
-ggmap(map1) + 
-  geom_point(data = zip_merged, aes(lng, lat)) +
-  labs(x = "Longitude", y = "Latitude", title = "Animal Bite Locations")
-```
 
-```{r}
-us<-map_data('state')
 
-ggplot(zip_merged,aes(lng,lat)) +
-  geom_polygon(data=us,aes(x=long,y=lat,group=group),color='gray',fill=NA,alpha=1)+
-  geom_point(aes(color = n),size=1.5,alpha=.75) +
-  xlim(-91,-81)+ylim(36,40)+
-  theme(panel.grid = element_blank())
-```
 
 ```{r}
 ky_comp <- us_comp %>% 
   filter(name=="Kentucky")
 ```
+
 ```{r}
 ky_cnty_comp <- cnty_comp %>% 
   filter(state=="Kentucky")
 ```
+
 ```{r}
 ggplot() +
   geom_sf(data = ky_comp, size = 0.125)+
   geom_sf(data = ky_cnty_comp, size = 0.125)
 ```
+
 ```{r}
 ggplot() +
   geom_sf(data = ky_comp, size = 0.125)+
