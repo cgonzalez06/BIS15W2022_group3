@@ -1,0 +1,256 @@
+---
+title: "Animal Bites - BIS15L"
+author: "E.Arriaga"
+date: "2/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(naniar)
+library(ggwordcloud)
+library(ggVennDiagram)
+```
+
+#Original data used, cleaning and testing out tidyverse
+```{r}
+animal_bites<-
+  readr::read_csv("data/Health_AnimalBites.csv")
+animal_bites
+```
+```{r}
+animal_bites<- janitor::clean_names(animal_bites)
+animal_bites
+```
+```{r}
+animal_bites
+  
+
+```
+```{r}
+names(animal_bites)
+```
+```{r}
+(animal_bites$color)
+```
+```{r}
+
+```
+```{r}
+animal_bites%>%
+  select(victim_zip)%>%
+  filter(victim_zip != "NA")
+```
+```{r}
+animal_bites%>%
+  tabyl(where_bitten_id_desc)
+  
+```
+```{r}
+animal_bites%>%
+  tabyl(species_id_desc)
+```
+```{r}
+animal_bites%>%
+  tabyl(breed_id_desc)
+```
+
+#Which animals most reported?
+```{r}
+  animal_bites%>%
+  ggplot(aes(x= species_id_desc, fill=species_id_desc))+
+  geom_bar()
+ 
+
+  
+```
+
+#Top 5 species of dogs reported
+```{r}
+  animal_bites%>%
+  filter(species_id_desc=="DOG")%>%
+  group_by(breed_id_desc)%>%
+  summarise(max_breed= max(n=n() ))%>%
+  arrange(desc(max_breed))
+  
+```
+```{r}
+top_five_dogs<-
+  animal_bites%>%
+  filter(species_id_desc== "DOG")%>%
+  filter(breed_id_desc=="PIT BULL"| breed_id_desc== "GERM SHEPERD"|breed_id_desc== "LABRADOR RETRIV"| breed_id_desc=="BOXER"|breed_id_desc== "CHICHAUHUA")
+
+```
+
+```{r}
+top_five_dogs<-
+  animal_bites%>%
+  filter(species_id_desc== "DOG")%>%
+  filter(breed_id_desc=="PIT BULL"| breed_id_desc== "GERM SHEPERD"|breed_id_desc== "LABRADOR RETRIV"| breed_id_desc=="BOXER"|breed_id_desc== "CHICHAUHUA")
+```
+
+#Found a more recent data set from the institution and build plots with this
+```{r}
+current_animal_bite <- readr::read_csv("data/Animal_Bites.csv")%>%clean_names()
+current_animal_bite
+
+```
+DO BACKGROUND ON RABIES 
+
+#Reviewed data to see any changes since last updated
+```{r}
+current_animal_bite%>%
+  ggplot(aes(x= species_id_desc, fill=species_id_desc))+
+  geom_bar()+
+  coord_flip()
+```
+```{r}
+current_animal_bite%>%
+  filter(species_id_desc=="DOG")%>%
+  group_by(breed_id_desc)%>%
+  summarise(max_breed= max(n=n() ))%>%
+  arrange(desc(max_breed))
+```
+```{r}
+
+ top_five_dogs<-
+  current_animal_bite%>%
+  filter(species_id_desc== "DOG")%>%
+  filter(breed_id_desc=="PIT BULL"| breed_id_desc== "GERM SHEPERD"|breed_id_desc== "LABRADOR RETRIV"| breed_id_desc=="BOXER"|breed_id_desc== "CHICHAUHUA")%>%
+  arrange(desc(breed_id_desc))
+top_five_dogs
+```
+
+
+
+#See positive cases for bats and dogs 
+```{r}
+bat_bites_rabies<-
+  current_animal_bite%>%
+  filter(species_id_desc=="BAT")%>%
+  filter(results_id_desc=="POSITIVE")
+bat_bites_rabies
+```
+```{r}
+dog_bites_rabies<-
+  current_animal_bite%>%
+  filter(species_id_desc=="DOG")%>%
+  filter(results_id_desc=="POSITIVE")
+dog_bites_rabies
+```
+#Where was the place on the body where most people got bit? 
+```{r}
+dog_bites_vdiagram<-
+  current_animal_bite%>%
+  filter(species_id_desc=="DOG")
+```
+
+```{r}
+dog_bites_vdiagram%>%
+  count(where_bitten_id_desc)
+```
+```{r}
+body_vec<- dog_bites_vdiagram %>%
+  filter(where_bitten_id_desc=="BODY")%>%
+  pull(breed_id_desc)
+```
+
+```{r}
+head_vec <- dog_bites_vdiagram%>%
+  filter(where_bitten_id_desc=="HEAD")%>%
+  pull(breed_id_desc)
+```
+
+```{r}
+unknown_vec <- dog_bites_vdiagram%>%
+  filter(where_bitten_id_desc=="UNKNOWN")%>%
+  pull(breed_id_desc)
+
+positive_vec <-dog_bites_vdiagram%>%
+  filter(results_id_desc=="POSITIVE")%>%
+  pull(breed_id_desc)
+```
+}
+
+```{r}
+dog_bites_list <- list(body_vec, head_vec, unknown_vec, positive_vec)
+
+dog_bites_vd<- 
+  ggVennDiagram(dog_bites_list, category.names = c("Body", "Head", "Unknown", "Positive"))+
+  scale_fill_distiller(palette = "Greens")+
+  labs(title = "Bodily Location of Dog Bites", caption = ("Diagram shows the correlation of positive rabies bites and body part"))
+dog_bites_vd
+  
+
+```
+#Which dog has the postive bite?
+```{r}
+current_animal_bite%>%
+  filter(species_id_desc=="DOG")%>%
+  filter(results_id_desc=="POSITIVE")
+```
+
+
+#Associations with positive rabies bites of bats. 
+```{r}
+bat_bites<-
+  current_animal_bite%>%
+  filter(species_id_desc=="BAT")
+
+bat_bites%>%
+  count(where_bitten_id_desc)
+```
+```{r}
+body_vec_bats<-
+  bat_bites%>%
+  filter(where_bitten_id_desc=="BODY")%>%
+  pull(id)
+
+
+head_vec_bats<- 
+  bat_bites%>%
+  filter(where_bitten_id_desc=="HEAD")%>%
+  pull(id)
+  
+unknown_vec_bats <- 
+  bat_bites%>%
+  filter(where_bitten_id_desc=="UNKNOWN")%>%
+  pull(id)
+ 
+positive_vec_bats <- 
+  bat_bites%>%
+  filter(results_id_desc=="POSITIVE")%>%
+  pull(id)
+
+
+
+  
+```
+#BUilding a venn diaram for bats vs. body parts
+```{r}
+bat_bites_list<- list(body_vec_bats, head_vec_bats, unknown_vec_bats, positive_vec_bats)
+
+bat_bites_vd<- 
+  ggVennDiagram(bat_bites_list, category.names = c("Body", "Head", "Unknown", "Positive"))+
+  scale_fill_distiller(palette = "Blues")+
+  labs(title = "Bodily Location of Bat Bites", caption = ("Diagram shows the correlation of positive rabies bites and body part"))
+bat_bites_vd
+```
+#Which bats were postive?
+```{r}
+bat_bites_rabies<-
+  current_animal_bite%>%
+  filter(species_id_desc=="BAT")%>%
+  filter(results_id_desc=="POSITIVE")
+bat_bites_rabies
+```
+
+```{r}
+bat_bites
+```
+
