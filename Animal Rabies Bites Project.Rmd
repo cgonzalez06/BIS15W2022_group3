@@ -15,6 +15,7 @@ library(paletteer)
 library(janitor)
 library(here)
 library(ggmap)
+library(ggwordcloud)
 ```
 
 ```{r}
@@ -70,6 +71,17 @@ animal_bites%>%
 animal_bites%>%
   select(species_id_desc)%>%
   ggplot(aes(species_id_desc, fill=species_id_desc)) + geom_bar() + labs(title="Bite Reports by Animal Species", x="Species", y="Number of Reports" )
+```
+
+```{r}
+animal_species_cloud <- animal_bites%>%
+  count(species_id_desc)
+animal_species_cloud
+```
+
+```{r}
+animal_species_cloud%>%
+  ggplot(aes(label=species_id_desc, size=n, color=species_id_desc)) + geom_text_wordcloud() + scale_size_area(max_size = 50) + theme_minimal()
 ```
 
 What animal has the most positive tests for rabies?

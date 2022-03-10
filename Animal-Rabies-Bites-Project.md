@@ -65,6 +65,10 @@ library(ggmap)
 ## Please cite ggmap if you use it! See citation("ggmap") for details.
 ```
 
+```r
+library(ggwordcloud)
+```
+
 
 ```r
 animal_bites <- readr::read_csv("data/Animal_Bites.csv")%>%clean_names()
@@ -265,6 +269,46 @@ animal_bites%>%
 
 ![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
 
+
+```r
+animal_species_cloud <- animal_bites%>%
+  count(species_id_desc)
+animal_species_cloud
+```
+
+```
+## # A tibble: 10 × 2
+##    species_id_desc     n
+##    <chr>           <int>
+##  1 BAT               674
+##  2 CAT              1760
+##  3 DOG              9458
+##  4 FERRET             14
+##  5 HORSE               4
+##  6 OTHER              26
+##  7 RACCOON            54
+##  8 RAT                 4
+##  9 SKUNK               8
+## 10 <NA>               72
+```
+
+
+```r
+animal_species_cloud%>%
+  ggplot(aes(label=species_id_desc, size=n, color=species_id_desc)) + geom_text_wordcloud() + scale_size_area(max_size = 50) + theme_minimal()
+```
+
+```
+## Warning: Removed 1 rows containing missing values (geom_text_wordcloud).
+```
+
+```
+## Warning in wordcloud_boxes(data_points = points_valid_first, boxes = boxes, :
+## One word could not fit on page. It has been placed at its original position.
+```
+
+![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+
 What animal has the most positive tests for rabies?
 
 ```r
@@ -289,7 +333,7 @@ animal_bites%>%
   ggplot(aes(species_id_desc, fill=species_id_desc)) + geom_bar() + labs(title="Positive Cases by Species", x="Species", y="Count") + theme_classic()
 ```
 
-![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
 
 
 What breed of dog has the most reported bites?
@@ -360,7 +404,7 @@ top_breed_id%>%
   ggplot(aes(x=breed_id_desc, y=n, fill=breed_id_desc)) + geom_col() +labs(title="Bites by Dog Breed ID", x="Breed ID", y="Number of Bites") + theme_classic() + theme(axis.text.x = element_text(angle = 30, hjust = 1)) 
 ```
 
-![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
 
 ```r
 top_breed <- animal_bites%>%
@@ -400,7 +444,7 @@ top_breed%>%
   ggplot(aes(x=breed, y=n, fill=breed)) + geom_col() +labs(title="Bites by Dog Breed", x="Breed", y="Number of Bites") + theme_classic() + theme(axis.text.x = element_text(angle = 30, hjust = 1)) 
 ```
 
-![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
+![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
 
 Where was data collected from? 
 
@@ -484,13 +528,13 @@ map1 <- get_map(bbox, maptype = "terrain", source = "stamen")
 ggmap(map1)
 ```
 
-![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
+![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 ```r
 ggmap(map1) + geom_point(data=zipcodes, aes(long, lat), color="blue", size=3) + labs(title="Location of Bites Reported", x="Longitude", y="Latitude")
 ```
 
-![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 When was data collected?
 
@@ -532,7 +576,7 @@ animal_bites%>%
   ggplot(aes(bite_year, fill=bite_month)) + geom_bar() + labs(title="Dates of Data Collection", x= "Bite Year", y="Number of Bites")+ theme_classic() + theme(axis.text.x = element_text(angle=30))
 ```
 
-![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](Animal-Rabies-Bites-Project_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
 
 Vaccination rates? 
 
