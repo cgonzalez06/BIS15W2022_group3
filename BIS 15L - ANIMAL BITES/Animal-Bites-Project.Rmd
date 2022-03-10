@@ -1,0 +1,162 @@
+---
+title: "Project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(tidyverse)
+library(RColorBrewer)
+library(paletteer)
+library(janitor)
+library(here)
+library(ggmap)
+```
+
+```{r}
+animal_bites <- readr::read_csv("data/Animal_Bites.csv")%>%clean_names()
+```
+```{r}
+animal_bites
+```
+#Cleaning up the Data
+```{r}
+animal_bites <- animal_bites%>%
+  naniar::replace_with_na(replace=list(gender_id_desc="UNKNOWN", results_id_desc="UNKNOWN", disposition_id_desc="UNKNOWN", vaccination_date="<NA>", head_sent_date="<NA>", release_date="<NA>"))
+animal_bites
+```
+
+```{r}
+animal_bites%>%
+  naniar::miss_var_summary()
+```
+Most of the results from the rabies test are missing as well as when the sample was sent in to the lab. 
+
+```{r}
+animal_bites <- animal_bites%>%
+  separate(bite_date, into=c("bite_year", "bite_month", "bite_day"), sep = "-")
+animal_bites
+```
+
+#Questions we wanted to ask
+What are the results of the rabies test? 
+```{r}
+animal_bites%>%
+  count(results_id_desc)
+```
+```{r}
+animal_bites%>%
+   filter(results_id_desc!="NA")%>%
+  ggplot(aes(results_id_desc, fill=results_id_desc)) + geom_bar() + labs(title="Rabies Test Results", x="Results", y="Number of Reports") + theme_classic()
+```
+```{r}
+animal_bites%>%
+  ggplot(aes(results_id_desc, fill=results_id_desc)) + geom_bar() + labs(title="Rabies Test Results (with NA)", x="Results", y="Number of Reports") + theme_classic()
+```
+
+What animal is most likely to bite? 
+
+```{r}
+animal_bites%>%
+  count(species_id_desc)%>%
+  arrange(desc(n))
+```
+
+```{r}
+animal_bites%>%
+  select(species_id_desc)%>%
+  ggplot(aes(species_id_desc, fill=species_id_desc)) + geom_bar() + labs(title="Bite Reports by Animal Species", x="Species", y="Number of Reports" )
+```
+
+What animal has the most positive tests for rabies?
+```{r}
+animal_bites%>%
+  select(species_id_desc, results_id_desc)%>%
+  filter(results_id_desc=="POSITIVE")%>%
+  count(species_id_desc)
+```
+```{r}
+animal_bites%>%
+  select(species_id_desc, results_id_desc)%>%
+  filter(results_id_desc=="POSITIVE")%>%
+  ggplot(aes(species_id_desc, fill=species_id_desc)) + geom_bar() + labs(title="Positive Cases by Species", x="Species", y="Count") + theme_classic()
+```
+
+
+What breed of dog is most likely to bite?
+```{r}
+animal_bites%>%
+  count(breed)%>%
+  arrange(desc(n))
+```
+```{r}
+animal_bites%>%
+  ggplot(aes(breed)) + geom_bar() 
+```
+
+Where was data collected from? 
+
+```{r}
+animal_bites%>%
+  count(victim_zip)%>%
+  arrange(desc(n))
+```
+```{r}
+
+```
+
+```{r}
+lat <- c(40.381834, 33.583623)
+long <- c(-86.770639, -86.770639)
+bbox <- make_bbox(long, lat, f=0.05)
+```
+```{r}
+#map1 <- get_map(bbox, maptype = "terrain", source = "stamen")
+#ggmap(map1)
+```
+
+
+When was data collected?
+```{r}
+animal_bites%>%
+  count(bite_year)%>%
+  arrange(bite_year)
+```
+```{r}
+animal_bites$bite_year <- as.numeric(animal_bites$bite_year)
+```
+
+```{r}
+animal_bites%>%
+  filter(bite_year!="5013")%>%
+  filter(bite_year!="2201")%>%
+  filter(bite_year!="2101")%>%
+  filter(bite_year!="1952")%>%
+  ggplot(aes(bite_year, fill=bite_month)) + geom_bar() 
+```
+
+Vaccination rates? 
+```{r}
+animal_bites%>%
+  count(vaccination_yrs)
+```
+```{r}
+animal_bites%>%
+  filter(vaccination_yrs=="11")
+```
+```{r}
+animal_bites%>%
+  filter(results_id_desc=="POSITIVE")
+```
+
+
+Where was the place on the body where most people got bit? 
+
+
+Associations with positive rabies results. 
+
+#Lessons
+PLEASE if you ever go into research and imputing data, be accurate when imputing your data. 
+Also try to record your data.
