@@ -56,7 +56,7 @@ animal_bites%>%
   ggplot(aes(results_id_desc, fill=results_id_desc)) + geom_bar() + labs(title="Rabies Test Results (with NA)", x="Results", y="Number of Reports") + theme_classic()
 ```
 
-What animal is most likely to bite? 
+What animal has the most reported bites? 
 
 ```{r}
 animal_bites%>%
@@ -85,18 +85,38 @@ animal_bites%>%
 ```
 
 
-What breed of dog is most likely to bite?
+What breed of dog has the most reported bites?
 ```{r}
-top_breeds <- animal_bites%>%
-  count(breed)%>%
+animal_bites%>%
+  filter(species_id_desc=="DOG")
+```
+
+```{r}
+top_breed_id <- animal_bites%>%
+  filter(species_id_desc=="DOG")%>%
+  count(breed_id_desc)%>%
   arrange(desc(n))%>%
-  top_n(10)%>%
-  filter(breed!="NA")
-top_breeds
+  top_n(11)%>%
+  filter(breed_id_desc!="NA")
+top_breed_id
+```
+
+```{r}
+top_breed_id%>%
+  ggplot(aes(x=breed_id_desc, y=n, fill=breed_id_desc)) + geom_col() +labs(title="Bites by Dog Breed ID", x="Breed ID", y="Number of Bites") + theme_classic() + theme(axis.text.x = element_text(angle = 30, hjust = 1)) 
 ```
 ```{r}
-top_breeds%>%
-  ggplot(aes(x=breed, y=n, fill=breed)) + geom_col() +labs(title="Bites by Dog Breed", x="Breed", y="Number of Bites") + theme_classic() + theme(axis.text.x = element_text(angle = 30)) 
+top_breed <- animal_bites%>%
+  filter(species_id_desc=="DOG")%>%
+  count(breed)%>%
+  arrange(desc(n))%>%
+  top_n(11)%>%
+  filter(breed!="NA")
+top_breed
+```
+```{r}
+top_breed%>%
+  ggplot(aes(x=breed, y=n, fill=breed)) + geom_col() +labs(title="Bites by Dog Breed", x="Breed", y="Number of Bites") + theme_classic() + theme(axis.text.x = element_text(angle = 30, hjust = 1)) 
 ```
 
 Where was data collected from? 
@@ -139,7 +159,7 @@ animal_bites%>%
   arrange(bite_year)
 ```
 ```{r}
-animal_bites$bite_year <- as.numeric(animal_bites$bite_year)
+animal_bites$bite_year <- as.factor(animal_bites$bite_year)
 ```
 
 ```{r}
@@ -148,6 +168,7 @@ animal_bites%>%
   filter(bite_year!="2201")%>%
   filter(bite_year!="2101")%>%
   filter(bite_year!="1952")%>%
+  filter(bite_year!="2029")%>%
   ggplot(aes(bite_year, fill=bite_month)) + geom_bar() + labs(title="Dates of Data Collection", x= "Bite Year", y="Number of Bites")+ theme_classic() + theme(axis.text.x = element_text(angle=30))
 ```
 
@@ -173,6 +194,10 @@ animal_bites%>%
 ```
 
 
-#Lessons
+#Take Away
 PLEASE if you ever go into research and imputing data, be accurate when imputing your data. 
-Also try to record your data.
+Also try to record your data and not leave things blank.
+Also please get your pets vaccinated. 
+
+#Thank you so much! 
+
